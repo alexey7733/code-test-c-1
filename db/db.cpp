@@ -441,8 +441,9 @@ bool SymbioDb::getAccountDetails(const Account& a, AccountDetails& dt)
 {
 	std::string uid = a.getUserId()->toString();
 
-	std::string SQL = "SELECT type, created, firstname, lastname, companyname, businessid FROM account WHERE userid=";
+	std::string SQL = "SELECT type, created, firstname, lastname, companyname, businessid FROM account WHERE userid=\"";
 	SQL += uid;
+	SQL += "\"";
 
 	char* errMsg = 0;
 
