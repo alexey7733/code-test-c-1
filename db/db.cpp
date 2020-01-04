@@ -46,8 +46,7 @@ void SymbioDb::createTables()
 {
 	char* errMsg = 0;
 
-	// TODO: IF NOT EXISTS ?
-	const char* SQL = "CREATE TABLE account ( \
+	const char* SQL = "CREATE TABLE IF NOT EXISTS account ( \
 		userid TEXT PRIMARY KEY NOT NULL, \
 		type INTEGER NOT NULL, \
 		created INTEGER NOT NULL, \
