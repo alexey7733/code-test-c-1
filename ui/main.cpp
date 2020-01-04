@@ -1,6 +1,4 @@
-#include "main.h"
 #include "ui.h"
-#include "eng.h"
 #include <QApplication>
 
 int main(int argc, char *argv[])
