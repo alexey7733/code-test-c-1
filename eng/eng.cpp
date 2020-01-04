@@ -27,8 +27,6 @@ bool SymbioEng::deleteAccounts(const std::vector<std::string>& userids)
 {
 	bool res = false;
 
-	// TODO: skip loop and provide id array directly to db driver ?
-
 	if (driver)
 	{
 		/*std::vector<Account> vec;
@@ -94,7 +92,7 @@ void SymbioEng::onAccountLoaded(const Account& a)
 
 void SymbioEng::onAccountsLoadCompleted()
 {
-	std::cout << "SymbioEng::onAccountsLoadCompleted()" << std::endl; // DEBUG
+	//std::cout << "SymbioEng::onAccountsLoadCompleted()" << std::endl; // DEBUG
 
 	if (observer)
 		observer->onAccountsLoadCompleted(accArray);

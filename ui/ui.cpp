@@ -37,6 +37,8 @@ static const QString REGEX_IBAN = "[A-Z]{2}[0-9]{2}[A-Z0-9]{0,30}"; // 2 letters
 static const int BUF_SIZE = 80;
 static char buf[BUF_SIZE] = { 0 };
 
+////////////////////////////////////////////////////////////////////////////////
+
 static const char* formatTimeStamp(time_t ts)
 {
 	struct tm t = *localtime(&ts);
@@ -123,7 +125,7 @@ void SymbioUi::showNewCustomerDialog()
 		QByteArray balname = lname.toLatin1();
 		char* d2 = (char*)balname.data();
 
-		std::cout << "SymbioUi::showNewCustomerDialog()" << " Customer " << d0 << " " << d1 << " " << d2 << std::endl; // DEBUG
+		//std::cout << "SymbioUi::showNewCustomerDialog()" << " Customer " << d0 << " " << d1 << " " << d2 << std::endl; // DEBUG
 
 		if (dialog.isIbanChecked())
 		{
@@ -170,7 +172,7 @@ void SymbioUi::showNewEnterpriseDialog()
 		QByteArray babid = businessid.toLatin1();
 		char* d2 = (char*)babid.data();
 
-		std::cout << "SymbioUi::showNewEnterpriseDialog()" << " Enterprise " << d0 << " " << d1 << " " << d2 << std::endl; // DEBUG
+		//std::cout << "SymbioUi::showNewEnterpriseDialog()" << " Enterprise " << d0 << " " << d1 << " " << d2 << std::endl; // DEBUG
 
 		if (dialog.isIbanChecked())
 		{
@@ -245,11 +247,9 @@ void SymbioUi::onDelButtonClicked()
 	if (vec.size() > 0)
 	{
 		if (engine->deleteAccounts(vec))
-		{
 			engine->loadAccounts();
-
-			std::cout << "Accounts deleted " << std::endl; // DEBUG
-		}
+		else
+			std::cout << "ERROR! failed to delete accounts" << std::endl; // DEBUG
 	}
 }
 
@@ -403,14 +403,9 @@ void NewAccountDialog::onRadioIntegerClicked()
 
 NewCustomerAccountDialog::NewCustomerAccountDialog(QWidget* parent)
 	: NewAccountDialog(parent)
-	//, userid(nullptr)
 	, lastName(nullptr)
 	, firstName(nullptr)
-	//, rbIban(nullptr)
-	//, rbInteger(nullptr)
 {
-	//connect(btnOk, &QPushButton::clicked, this, &NewCustomerAccountDialog::onOkButtonPressed);
-
 	// first name
 	QLabel* lblFirstName = new QLabel(QString(TXT_FIRSTNAME), this);
 	lblFirstName->setGeometry(QRect(5, 0, 150, 20));
@@ -432,24 +427,10 @@ NewCustomerAccountDialog::NewCustomerAccountDialog(QWidget* parent)
 	lastName->setValidator(valAlpha);
 
 	// account type
-	//QLabel* 
-	//lbltype = new QLabel(QString(TXT_ACCTYPE), this);
 	lbltype->setGeometry(QRect(5, 80, 150, 20));
-
-	//rbInteger = new QRadioButton(TXT_INTEGER, this);
 	rbInteger->setGeometry(QRect(10, 100, 82, 17));
-	//rbInteger->setChecked(true);
-	//connect(rbInteger, &QRadioButton::pressed, this, &NewCustomerAccountDialog::onRadioIntegerClicked);
-
-	//rbIban = new QRadioButton(TXT_IBAN, this);
 	rbIban->setGeometry(QRect(85, 100, 82, 17));
-	//rbIban->setChecked(false);
-	//connect(rbIban, &QRadioButton::pressed, this, &NewCustomerAccountDialog::onRadioIbanClicked);
-
-	//userid = new QLineEdit("", this);
 	userid->setGeometry(QRect(5, 120, 150, 20));
-	//userid->setPlaceholderText("0123456789");
-	//userid->setValidator(valDigit);
 }
 
 NewCustomerAccountDialog::~NewCustomerAccountDialog()
@@ -467,11 +448,6 @@ QString NewCustomerAccountDialog::getLastName()
 	return lastName->text();
 }
 
-/*QString NewCustomerAccountDialog::getUserId()
-{
-	return userid->text();
-}*/
-
 void NewCustomerAccountDialog::setFirstName(const QString& str)
 {
 	firstName->setText(str);
@@ -486,16 +462,6 @@ void NewCustomerAccountDialog::setUserId(const QString& str)
 {
 	userid->setText(str);
 }
-
-/*bool NewCustomerAccountDialog::isIbanChecked()
-{
-	return rbIban->isChecked();
-}
-
-bool NewCustomerAccountDialog::isIntegerChecked()
-{
-	return rbInteger->isChecked();
-}*/
 
 void NewCustomerAccountDialog::onOkButtonPressed()
 {
@@ -548,32 +514,6 @@ void NewCustomerAccountDialog::onOkButtonPressed()
 	// input is valid
 	accept();
 }
-
-/*void NewCustomerAccountDialog::onRadioIbanClicked()
-{
-	if (rbIban->isChecked())
-		return;
-
-	userid->setText("");
-	userid->setPlaceholderText("FI01234567890");
-	userid->setValidator(valIban);
-
-	rbIban->setChecked(true);
-	rbInteger->setChecked(false);
-}
-
-void NewCustomerAccountDialog::onRadioIntegerClicked()
-{
-	if (rbInteger->isChecked())
-		return;
-
-	userid->setText("");
-	userid->setPlaceholderText("0123456789");
-	userid->setValidator(valDigit);
-
-	rbIban->setChecked(false);
-	rbInteger->setChecked(true);
-}*/
 
 ////////////////////////////////////////////////////////////////////////////////
 

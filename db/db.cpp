@@ -39,9 +39,6 @@ Account::Account(const Account& acc)
 	, created(acc.created)
 	, type(acc.type)
 {
-	//type = acc.type;
-	//created = acc.created;
-
 	if (acc.userid->getType() == UserId::UserIdType::Integer)
 		userid = new UserIdInt(static_cast<UserIdInt*>(acc.userid)->getUserId());
 	else
@@ -233,26 +230,6 @@ SymbioDb::SymbioDb()
 	//dropTables();
 
 	createTables();
-
-	/*AccountCustomer c1(1024);
-	c1.setFirstName("alexey");
-	c1.setLastName("zerkin");
-	createAccount(c1);
-
-	AccountCustomer c2("1025");
-	c2.setFirstName("billy");
-	c2.setLastName("joel");
-	createAccount(c2);
-
-	AccountEnterprise e1(1026);
-	e1.setName("alexsoft oy");
-	e1.setBusinessid("2068642-5");
-	createAccount(e1);
-
-	AccountEnterprise e2(1027);
-	e2.setName("creeng oy");
-	e2.setBusinessid("2478103-2");
-	createAccount(e2);*/
 }
 
 SymbioDb::~SymbioDb()

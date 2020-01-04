@@ -47,22 +47,14 @@ public:
 	virtual ~NewCustomerAccountDialog();
 	QString getFirstName();
 	QString getLastName();
-	//QString getUserId();
 	void setFirstName(const QString& str = "");
 	void setLastName(const QString& str = "");
 	void setUserId(const QString& str = "");
-	//bool isIbanChecked();
-	//bool isIntegerChecked();
 private slots:
 	virtual void onOkButtonPressed();
-	//void onRadioIbanClicked();
-	//void onRadioIntegerClicked();
 private:
-	//QLineEdit* userid;
 	QLineEdit* lastName;
 	QLineEdit* firstName;
-	//QRadioButton* rbIban;
-	//QRadioButton* rbInteger;
 };
 
 // NewEnterpriseAccountDialog
