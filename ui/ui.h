@@ -2,6 +2,7 @@
 #define __UIH__
 
 #include "eng.h"
+#include <string>
 #include <qdialog.h>
 #include <qmainwindow.h>
 #include <qtableview.h>
@@ -12,6 +13,28 @@ class QWidget;
 class QComboBox;
 class QRadioButton;
 class QStandardItemModel;
+
+// AccountDetailsDialog
+class AccountDetailsDialog : public QDialog
+{
+	Q_OBJECT
+public:
+	AccountDetailsDialog(QWidget* parent = nullptr);
+	virtual ~AccountDetailsDialog();
+	void setCreated(time_t t);
+	void setAccountType(Account::AccountType t);
+	void setFirstName(const std::string& str);
+	void setLastName(const std::string& str);
+	void setCompanyName(const std::string& str);
+	void setBusinessId(const std::string& str);
+private:
+	QLineEdit* leType;
+	QLineEdit* leCreated;
+	QLineEdit* leFirstName;
+	QLineEdit* leLastName;
+	QLineEdit* leCompanyName;
+	QLineEdit* leBusinessid;
+};
 
 // NewAccountDialog
 class NewAccountDialog : public QDialog
@@ -86,6 +109,7 @@ public:
 private slots:
 	void onAddButtonClicked();
 	void onDelButtonClicked();
+	void onDetailsButtonClicked();
 	void onSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
 private:
 	void setupTableHeaders();

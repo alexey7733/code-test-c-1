@@ -65,12 +65,21 @@ bool SymbioEng::createAccount(const Account& acc)
 	return res;
 }
 
-bool SymbioEng::getAccountDetails(const Account& acc, AccountDetails& det)
+bool SymbioEng::getAccountDetails(const std::string& uid, AccountDetails& det)
 {
 	bool res = false;
 
-	if (driver)
-		res = driver->getAccountDetails(acc, det);
+	for (const Account& acc : accArray)
+	{
+		const std::string uid2 = acc.getUserId()->toString();
+
+		if (uid2.compare(uid) == 0)
+		{
+			if (driver)
+				res = driver->getAccountDetails(acc, det);
+			return res;
+		}
+	}
 
 	return res;
 }

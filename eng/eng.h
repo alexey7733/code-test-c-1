@@ -26,7 +26,7 @@ public:
 	bool deleteAccounts(const std::vector<std::string>& userids);
 	bool createAccount(const Account& acc);
 	void loadAccounts();
-	bool getAccountDetails(const Account& acc, AccountDetails& det);
+	bool getAccountDetails(const std::string& uid, AccountDetails& det);
 
 	// From LoadAccountsObserver
 	virtual void onAccountLoaded(const Account& a);

@@ -18,12 +18,14 @@ static const char *TABLE_HEADER[] = { "User id",  "Account type" , "Time created
 static const char* TXT_IBAN = "IBAN";
 static const char* TXT_INTEGER = "Integer";
 static const char* TXT_ACCTYPE = "Account type";
+static const char* TXT_CREATED = "Time created";
 static const char* TXT_LASTNAME = "Last Name";
 static const char* TXT_FIRSTNAME = "First Name";
 static const char* TXT_OK = "Ok";
 static const char* TXT_CANCEL = "Cancel";
 static const char* TXT_NEW = "New";
 static const char* TXT_DELETE = "Delete";
+static const char* TXT_DETAILS = "Details";
 static const char* TXT_CUSTOMER = "Customer";
 static const char* TXT_ENTERPRISE = "Enterprise";
 
@@ -85,6 +87,11 @@ SymbioUi::SymbioUi(QWidget* parent)
 	btnDel->setText(TXT_DELETE);
 	btnDel->setGeometry(QRect(720, 90, 80, 24));
 	connect(btnDel, &QPushButton::clicked, this, &SymbioUi::onDelButtonClicked);
+
+	QPushButton* btnDtl = new QPushButton(this);
+	btnDtl->setText(TXT_DETAILS);
+	btnDtl->setGeometry(QRect(720, 130, 80, 24));
+	connect(btnDtl, &QPushButton::clicked, this, &SymbioUi::onDetailsButtonClicked);
 
 	// engine
 	engine = new SymbioEng();
@@ -253,6 +260,61 @@ void SymbioUi::onDelButtonClicked()
 	}
 }
 
+void SymbioUi::onDetailsButtonClicked()
+{
+	std::cout << "SymbioUi::onDetailsButtonClicked()" << std::endl;
+
+	const QModelIndexList list = table->selectionModel()->selectedIndexes();
+
+	if (list.size() > 0)
+	{
+		const QModelIndex& index = list.at(0);
+		int row = index.row();
+		int col = index.column();
+
+		std::string userid;
+
+		for (int col = 0; col < 3; ++col)
+		{
+			QStandardItem* item = model->item(row, col);
+			QString text = item->text();
+			QByteArray bytes = text.toLatin1();
+			char* data = bytes.data();
+
+			if (col == COL_USERID)
+			{
+				userid = std::string(data);
+
+				break;
+			}
+		}
+
+		AccountDetails det;
+
+		if (engine->getAccountDetails(userid, det))
+		{
+			AccountDetailsDialog dialog;
+
+			dialog.setAccountType(det.type);
+			dialog.setCreated(det.created);
+			if (det.firstName.length() > 0)
+				dialog.setFirstName(det.firstName);
+			if (det.lastName.length() > 0)
+				dialog.setLastName(det.lastName);
+			if (det.companyName.length() > 0)
+				dialog.setCompanyName(det.companyName);
+			if (det.businessId.length() > 0)
+				dialog.setBusinessId(det.businessId);
+
+			int res = dialog.exec();
+
+			std::cout << "Account details dialog exec=" << res << std::endl; // DEBUG
+		}
+		else
+			std::cout << "ERROR! failed to fetch account details" << std::endl; // DEBUG
+	}
+}
+
 void SymbioUi::onSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
 {
 	//std::cout << "SymbioUi::onSelectionChanged()" << std::endl;
@@ -299,6 +361,97 @@ void SymbioUi::onAccountsLoadCompleted(const std::vector<Account>& vec)
 
 		++row;
 	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+AccountDetailsDialog::AccountDetailsDialog(QWidget* parent)
+	: QDialog(parent)
+	, leType(nullptr)
+	, leCreated(nullptr)
+	, leFirstName(nullptr)
+	, leLastName(nullptr)
+	, leCompanyName(nullptr)
+	, leBusinessid(nullptr)
+{
+	leType = new QLineEdit(this);
+	leType->setGeometry(QRect(0, 0, 150, 20));
+	leType->setReadOnly(true);
+	leType->setPlaceholderText(TXT_ACCTYPE);
+
+	leCreated = new QLineEdit(this);
+	leCreated->setGeometry(QRect(0, 20, 150, 20));
+	leCreated->setReadOnly(true);
+	leCreated->setPlaceholderText(TXT_CREATED);
+
+	leFirstName = new QLineEdit(this);
+	leFirstName->setGeometry(QRect(0, 40, 150, 20));
+	leFirstName->setReadOnly(true);
+	leFirstName->setPlaceholderText(TXT_FIRSTNAME);
+
+	leLastName = new QLineEdit(this);
+	leLastName->setGeometry(QRect(0, 60, 150, 20));
+	leLastName->setReadOnly(true);
+	leLastName->setPlaceholderText(TXT_LASTNAME);
+
+	leCompanyName = new QLineEdit(this);
+	leCompanyName->setGeometry(QRect(0, 80, 150, 20));
+	leCompanyName->setReadOnly(true);
+	leCompanyName->setPlaceholderText(TXT_COMPANYNAME);
+
+	leBusinessid = new QLineEdit(this);
+	leBusinessid->setGeometry(QRect(0, 100, 150, 20));
+	leBusinessid->setReadOnly(true);
+	leBusinessid->setPlaceholderText(TXT_BUSINESSID);
+
+	QPushButton* ok = new QPushButton(this);
+	ok->setText(TXT_OK);
+	ok->setGeometry(QRect(0, 150, 80, 24));
+	connect(ok, &QPushButton::clicked, this, &QDialog::accept);
+
+	QPushButton* no = new QPushButton(this);
+	no->setText(TXT_CANCEL);
+	no->setGeometry(QRect(80, 150, 80, 24));
+	connect(no, &QPushButton::clicked, this, &QDialog::reject);
+}
+
+AccountDetailsDialog::~AccountDetailsDialog()
+{
+	//
+}
+
+void AccountDetailsDialog::setCreated(time_t t)
+{
+	const char *timeStr = formatTimeStamp(t);
+
+	leCreated->setText(QString(timeStr));
+}
+
+void AccountDetailsDialog::setAccountType(Account::AccountType t)
+{
+	std::string str = t == Account::AccountType::Customer ? TXT_CUSTOMER : TXT_ENTERPRISE;
+
+	leType->setText(QString(str.c_str()));
+}
+
+void AccountDetailsDialog::setFirstName(const std::string& str)
+{
+	leFirstName->setText(str.c_str());
+}
+
+void AccountDetailsDialog::setLastName(const std::string& str)
+{
+	leLastName->setText(QString(str.c_str()));
+}
+
+void AccountDetailsDialog::setCompanyName(const std::string& str)
+{
+	leCompanyName->setText(QString(str.c_str()));
+}
+
+void AccountDetailsDialog::setBusinessId(const std::string& str)
+{
+	leBusinessid->setText(QString(str.c_str()));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
