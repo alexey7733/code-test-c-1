@@ -2,7 +2,6 @@
 #define __UIH__
 
 #include "eng.h"
-#include <string>
 #include <qdialog.h>
 #include <qmainwindow.h>
 #include <qtableview.h>
@@ -21,12 +20,12 @@ class AccountDetailsDialog : public QDialog
 public:
 	AccountDetailsDialog(QWidget* parent = nullptr);
 	virtual ~AccountDetailsDialog();
-	void setCreated(time_t t);
-	void setAccountType(Account::AccountType t);
-	void setFirstName(const std::string& str);
-	void setLastName(const std::string& str);
-	void setCompanyName(const std::string& str);
-	void setBusinessId(const std::string& str);
+	void setCreated(const QString& str);
+	void setAccountType(const QString& str);
+	void setFirstName(const QString& str);
+	void setLastName(const QString& str);
+	void setCompanyName(const QString& str);
+	void setBusinessId(const QString& str);
 private:
 	QLineEdit* leType;
 	QLineEdit* leCreated;

@@ -1,4 +1,4 @@
-add_library (db db.cpp)
+add_library (db account.cpp userid.cpp db.cpp)
 
 target_include_directories (db PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 

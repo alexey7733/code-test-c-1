@@ -1,4 +1,7 @@
 #include "ui.h"
+#include "account.h"
+#include "userid.h"
+#include <string>
 #include <iostream>
 #include <qstandarditemmodel.h>
 #include <qpushbutton.h>
@@ -295,16 +298,20 @@ void SymbioUi::onDetailsButtonClicked()
 		{
 			AccountDetailsDialog dialog;
 
-			dialog.setAccountType(det.type);
-			dialog.setCreated(det.created);
+			std::string accTypeStr = det.type == Account::AccountType::Customer ? TXT_CUSTOMER : TXT_ENTERPRISE;
+			dialog.setAccountType(QString(accTypeStr.c_str()));
+
+			const char *timeStr = formatTimeStamp(det.created);
+			dialog.setCreated(QString(timeStr));
+
 			if (det.firstName.length() > 0)
-				dialog.setFirstName(det.firstName);
+				dialog.setFirstName(QString(det.firstName.c_str()));
 			if (det.lastName.length() > 0)
-				dialog.setLastName(det.lastName);
+				dialog.setLastName(QString(det.lastName.c_str()));
 			if (det.companyName.length() > 0)
-				dialog.setCompanyName(det.companyName);
+				dialog.setCompanyName(QString(det.companyName.c_str()));
 			if (det.businessId.length() > 0)
-				dialog.setBusinessId(det.businessId);
+				dialog.setBusinessId(QString(det.businessId.c_str()));
 
 			int res = dialog.exec();
 
@@ -420,38 +427,34 @@ AccountDetailsDialog::~AccountDetailsDialog()
 	//
 }
 
-void AccountDetailsDialog::setCreated(time_t t)
+void AccountDetailsDialog::setCreated(const QString& str)
 {
-	const char *timeStr = formatTimeStamp(t);
-
-	leCreated->setText(QString(timeStr));
+	leCreated->setText(str);
 }
 
-void AccountDetailsDialog::setAccountType(Account::AccountType t)
+void AccountDetailsDialog::setAccountType(const QString& str)
 {
-	std::string str = t == Account::AccountType::Customer ? TXT_CUSTOMER : TXT_ENTERPRISE;
-
-	leType->setText(QString(str.c_str()));
+	leType->setText(str);
 }
 
-void AccountDetailsDialog::setFirstName(const std::string& str)
+void AccountDetailsDialog::setFirstName(const QString& str)
 {
-	leFirstName->setText(str.c_str());
+	leFirstName->setText(str);
 }
 
-void AccountDetailsDialog::setLastName(const std::string& str)
+void AccountDetailsDialog::setLastName(const QString& str)
 {
-	leLastName->setText(QString(str.c_str()));
+	leLastName->setText(str);
 }
 
-void AccountDetailsDialog::setCompanyName(const std::string& str)
+void AccountDetailsDialog::setCompanyName(const QString& str)
 {
-	leCompanyName->setText(QString(str.c_str()));
+	leCompanyName->setText(str);
 }
 
-void AccountDetailsDialog::setBusinessId(const std::string& str)
+void AccountDetailsDialog::setBusinessId(const QString& str)
 {
-	leBusinessid->setText(QString(str.c_str()));
+	leBusinessid->setText(str);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
