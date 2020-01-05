@@ -642,21 +642,6 @@ QString NewCustomerAccountDialog::getLastName()
 	return lastName->text();
 }
 
-void NewCustomerAccountDialog::setFirstName(const QString& str)
-{
-	firstName->setText(str);
-}
-
-void NewCustomerAccountDialog::setLastName(const QString& str)
-{
-	lastName->setText(str);
-}
-
-void NewCustomerAccountDialog::setUserId(const QString& str)
-{
-	userid->setText(str);
-}
-
 void NewCustomerAccountDialog::onOkButtonPressed()
 {
 	//std::cout << "NewCustomerAccountDialog::onOkButtonPressed()" << std::endl;

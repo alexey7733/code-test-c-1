@@ -69,9 +69,6 @@ public:
 	virtual ~NewCustomerAccountDialog();
 	QString getFirstName();
 	QString getLastName();
-	void setFirstName(const QString& str = "");
-	void setLastName(const QString& str = "");
-	void setUserId(const QString& str = "");
 private slots:
 	virtual void onOkButtonPressed();
 private:
