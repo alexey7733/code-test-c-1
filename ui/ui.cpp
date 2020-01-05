@@ -3,6 +3,7 @@
 #include "userid.h"
 #include <string>
 #include <iostream>
+#include <limits.h>
 #include <qstandarditemmodel.h>
 #include <qpushbutton.h>
 #include <qcombobox.h>
@@ -50,6 +51,43 @@ static const char* formatTimeStamp(time_t ts)
 	memset(buf, 0, BUF_SIZE);
 	strftime(buf, sizeof(buf), "%a %Y-%m-%d %H:%M:%S", &t);
 	return buf;
+}
+
+//
+// https://stackoverflow.com/questions/13661481/how-to-check-if-a-number-overflows-an-int
+//
+static bool isValidInteger(const std::string& str)
+{
+	const int max = INT_MAX; // TODO: define in database module ?
+
+	int val = std::atoi(str.c_str());
+
+	if (val == 0)
+		return false;
+
+	if (val < 0)
+		return false;
+
+	if (val < max)
+		return true;
+
+	int len = (int)str.length();
+
+	int curval = 0;
+
+	for (int i = 0; i < len; ++i)
+	{
+		char buf[2] = { str[i], 0 };
+
+		int digit = std::atoi(buf);
+
+		if (curval > max / 10 || (curval == max / 10 && digit > max % 10))
+			return false;
+		else
+			curval = curval * 10 + digit;
+	}
+
+	return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -650,9 +688,19 @@ void NewCustomerAccountDialog::onOkButtonPressed()
 
 	if (isIntegerChecked())
 	{
+		QByteArray bauid = uid.toLatin1();
+		char* d0 = (char*)bauid.data();
+
+		if (!isValidInteger(d0))
+		{
+			std::cout << "ERROR: invalid userid INT " << d0 << std::endl; // DEBUG
+
+			return;
+		}
+
 		if (length < 1 || valDigit->validate(getUserId(), pos) != QValidator::Acceptable)
 		{
-			std::cout << "ERROR: invalid userid INT length=" << length << std::endl; // DEBUG
+			std::cout << "ERROR: invalid userid INT " << d0 << std::endl; // DEBUG
 
 			return;
 		}
@@ -750,9 +798,19 @@ void NewEnterpriseAccountDialog::onOkButtonPressed()
 
 	if (isIntegerChecked())
 	{
+		QByteArray bauid = uid.toLatin1();
+		char* d0 = (char*)bauid.data();
+
+		if (!isValidInteger(d0))
+		{
+			std::cout << "ERROR: invalid userid INT " << d0 << std::endl; // DEBUG
+
+			return;
+		}
+
 		if (length < 1 || valDigit->validate(getUserId(), pos) != QValidator::Acceptable)
 		{
-			std::cout << "ERROR: invalid userid INT length=" << length << std::endl; // DEBUG
+			std::cout << "ERROR: invalid userid INT " << d0 << std::endl; // DEBUG
 
 			return;
 		}
