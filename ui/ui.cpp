@@ -19,8 +19,8 @@ static const int COL_ACCTYPE = 1;
 static const int COL_CREATED = 2;
 static const char *TABLE_HEADER[] = { "User id",  "Account type" , "Time created" };
 
-static const char* TXT_IBAN = "IBAN";
-static const char* TXT_INTEGER = "Integer";
+//static const char* TXT_IBAN = "IBAN";
+//static const char* TXT_INTEGER = "Integer";
 static const char* TXT_ACCTYPE = "Account type";
 static const char* TXT_CREATED = "Time created";
 static const char* TXT_LASTNAME = "Last Name";
@@ -94,7 +94,6 @@ static bool isValidInteger(const std::string& str)
 
 SymbioUi::SymbioUi(QWidget* parent)
 	: QMainWindow(parent)
-	, engine(nullptr)
 	, table(nullptr)
 	, model(nullptr)
 	, combo(nullptr)
@@ -135,14 +134,13 @@ SymbioUi::SymbioUi(QWidget* parent)
 	connect(btnDtl, &QPushButton::clicked, this, &SymbioUi::onDetailsButtonClicked);
 
 	// engine
-	engine = new SymbioEng();
-	engine->setObserver(this);
-	engine->loadAccounts();
+	SymbioEng::instance()->setObserver(this);
+	SymbioEng::instance()->loadAccounts();
 }
 
 SymbioUi::~SymbioUi()
 {
-	delete engine;
+	SymbioEng::instance()->release();
 }
 
 void SymbioUi::setupTableHeaders()
@@ -154,109 +152,36 @@ void SymbioUi::setupTableHeaders()
 	model->setHorizontalHeaderLabels(headers);
 }
 
-void SymbioUi::showNewCustomerDialog()
-{
-	NewCustomerAccountDialog dialog;
-
-	if (dialog.exec() == QDialog::Accepted)
-	{
-		QString uid = dialog.getUserId();
-		QString fname = dialog.getFirstName();
-		QString lname = dialog.getLastName();
-
-		QByteArray bauid = uid.toLatin1();
-		char* d0 = (char*)bauid.data();
-
-		QByteArray bafname = fname.toLatin1();
-		char* d1 = (char*)bafname.data();
-
-		QByteArray balname = lname.toLatin1();
-		char* d2 = (char*)balname.data();
-
-		//std::cout << "SymbioUi::showNewCustomerDialog()" << " Customer " << d0 << " " << d1 << " " << d2 << std::endl; // DEBUG
-
-		if (dialog.isIbanChecked())
-		{
-			AccountCustomer acc(d0);
-			acc.setFirstName(d1);
-			acc.setLastName(d2);
-
-			if (engine->createAccount(acc))
-				engine->loadAccounts();
-			else
-				std::cout << "SymbioUi::showNewCustomerDialog(1) ERROR! failed to add customer account" << std::endl;
-		}
-		else // integer
-		{
-			int userid = std::atoi(d0);
-
-			AccountCustomer acc(userid);
-			acc.setFirstName(d1);
-			acc.setLastName(d2);
-
-			if (engine->createAccount(acc))
-				engine->loadAccounts();
-			else
-				std::cout << "SymbioUi::showNewCustomerDialog(2) ERROR! failed to add customer account" << std::endl;
-		}
-	}
-}
-
-void SymbioUi::showNewEnterpriseDialog()
-{
-	NewEnterpriseAccountDialog dialog;
-
-	if (dialog.exec() == QDialog::Accepted)
-	{
-		QString uid = dialog.getUserId();
-		QByteArray bauid = uid.toLatin1();
-		char* d0 = (char*)bauid.data();
-
-		QString companyname = dialog.getCompanyName();
-		QByteArray bacname = companyname.toLatin1();
-		char* d1 = (char*)bacname.data();
-
-		QString businessid = dialog.getBusinessId();
-		QByteArray babid = businessid.toLatin1();
-		char* d2 = (char*)babid.data();
-
-		//std::cout << "SymbioUi::showNewEnterpriseDialog()" << " Enterprise " << d0 << " " << d1 << " " << d2 << std::endl; // DEBUG
-
-		if (dialog.isIbanChecked())
-		{
-			AccountEnterprise acc(d0);
-			acc.setName(d1);
-			acc.setBusinessid(d2);
-
-			if (engine->createAccount(acc))
-				engine->loadAccounts();
-			else
-				std::cout << "SymbioUi::showNewEnterpriseDialog(1) ERROR! failed to add enterprise account" << std::endl;
-		}
-		else // integer
-		{
-			int userid = std::atoi(d0);
-
-			AccountEnterprise acc(userid);
-			acc.setName(d1);
-			acc.setBusinessid(d2);
-
-			if (engine->createAccount(acc))
-				engine->loadAccounts();
-			else
-				std::cout << "SymbioUi::showNewEnterpriseDialog(2) ERROR! failed to add enterprise account" << std::endl;
-		}
-	}
-}
-
 void SymbioUi::onAddButtonClicked()
 {
 	QString txt = combo->currentText();
-	
+
+	NewAccountDialog dialog;
+
 	if (txt.compare(TXT_CUSTOMER) == 0)
-		showNewCustomerDialog();
+	{
+		const std::map<AccountType, AccountSpecs>& specMap = SymbioEng::instance()->getAccountSpecs();
+		const AccountSpecs& spec = specMap.at(AccountType::Customer);
+		dialog.setSpecs(spec);
+	}
 	else if (txt.compare(TXT_ENTERPRISE) == 0)
-		showNewEnterpriseDialog();
+	{
+		const std::map<AccountType, AccountSpecs>& specMap = SymbioEng::instance()->getAccountSpecs();
+		const AccountSpecs& spec = specMap.at(AccountType::Enterprise);
+		dialog.setSpecs(spec);
+	}
+
+	int res = dialog.exec();
+
+	if (res)
+	{
+		const AccountSpecs& spec = dialog.getAccountSpecs();
+
+		//std::cout << "SymbioUi::onAddButtonClicked() accepted" << std::endl; // DEBUG
+
+		if (SymbioEng::instance()->createAccount(spec))
+			SymbioEng::instance()->loadAccounts();
+	}
 }
 
 void SymbioUi::onDelButtonClicked()
@@ -294,8 +219,8 @@ void SymbioUi::onDelButtonClicked()
 
 	if (vec.size() > 0)
 	{
-		if (engine->deleteAccounts(vec))
-			engine->loadAccounts();
+		if (SymbioEng::instance()->deleteAccounts(vec))
+			SymbioEng::instance()->loadAccounts();
 		else
 			std::cout << "ERROR! failed to delete accounts" << std::endl; // DEBUG
 	}
@@ -303,7 +228,7 @@ void SymbioUi::onDelButtonClicked()
 
 void SymbioUi::onDetailsButtonClicked()
 {
-	std::cout << "SymbioUi::onDetailsButtonClicked()" << std::endl;
+	//std::cout << "SymbioUi::onDetailsButtonClicked()" << std::endl;
 
 	const QModelIndexList list = table->selectionModel()->selectedIndexes();
 
@@ -330,30 +255,35 @@ void SymbioUi::onDetailsButtonClicked()
 			}
 		}
 
-		AccountDetails det;
+		Account acc;
 
-		if (engine->getAccountDetails(userid, det))
+		if (SymbioEng::instance()->getAccountDetails(userid, acc))
 		{
 			AccountDetailsDialog dialog;
 
-			std::string accTypeStr = det.type == Account::AccountType::Customer ? TXT_CUSTOMER : TXT_ENTERPRISE;
+			std::string accTypeStr = acc.getAccountType() == AccountType::Customer ? TXT_CUSTOMER : TXT_ENTERPRISE;
 			dialog.setAccountType(QString(accTypeStr.c_str()));
 
-			const char *timeStr = formatTimeStamp(det.created);
+			const char *timeStr = formatTimeStamp(acc.getCreated());
 			dialog.setCreated(QString(timeStr));
 
-			if (det.firstName.length() > 0)
-				dialog.setFirstName(QString(det.firstName.c_str()));
-			if (det.lastName.length() > 0)
-				dialog.setLastName(QString(det.lastName.c_str()));
-			if (det.companyName.length() > 0)
-				dialog.setCompanyName(QString(det.companyName.c_str()));
-			if (det.businessId.length() > 0)
-				dialog.setBusinessId(QString(det.businessId.c_str()));
+			const std::string& firtName = acc.getFirstName();
+			const std::string& lastName = acc.getLastName();
+			const std::string& companyName = acc.getCompanyName();
+			const std::string& businessId = acc.getBusinessId();
+
+			if (firtName.length() > 0)
+				dialog.setFirstName(QString(firtName.c_str()));
+			if (lastName.length() > 0)
+				dialog.setLastName(QString(lastName.c_str()));
+			if (companyName.length() > 0)
+				dialog.setCompanyName(QString(companyName.c_str()));
+			if (businessId.length() > 0)
+				dialog.setBusinessId(QString(businessId.c_str()));
 
 			int res = dialog.exec();
 
-			std::cout << "Account details dialog exec=" << res << std::endl; // DEBUG
+			//std::cout << "Account details dialog exec=" << res << std::endl; // DEBUG
 		}
 		else
 			std::cout << "ERROR! failed to fetch account details" << std::endl; // DEBUG
@@ -375,8 +305,8 @@ void SymbioUi::onAccountsLoadCompleted(const std::vector<Account>& vec)
 	for (const Account& acc : vec)
 	{
 		time_t created = acc.getCreated();
-		Account::AccountType type = acc.getAccountType();
-		const std::string userid = acc.getUserId()->toString();
+		AccountType type = acc.getAccountType();
+		const std::string userid = acc.getUserId();
 
 		QStandardItem* item1 = new QStandardItem(QString("%0").arg(QString(userid.c_str())));
 		item1->setEditable(false);
@@ -384,7 +314,7 @@ void SymbioUi::onAccountsLoadCompleted(const std::vector<Account>& vec)
 		model->setItem(row, COL_USERID, item1);
 		table->setColumnWidth(COL_USERID, 100);
 
-		const char* typeStr = (type == Account::AccountType::Customer ? TXT_CUSTOMER : TXT_ENTERPRISE);
+		const char* typeStr = (type == AccountType::Customer ? TXT_CUSTOMER : TXT_ENTERPRISE);
 		QStandardItem* item2 = new QStandardItem(QString("%0").arg(QString(typeStr)));
 		item2->setEditable(false);
 		item2->setSelectable(false);
@@ -499,47 +429,13 @@ void AccountDetailsDialog::setBusinessId(const QString& str)
 
 NewAccountDialog::NewAccountDialog(QWidget* parent)
 	: QDialog(parent)
-	, btnOk(nullptr)
 	, valAlpha(nullptr)
 	, valDigit(nullptr)
 	, valIban(nullptr)
-	, lbltype(nullptr)
-	, userid(nullptr)
-	, rbIban(nullptr)
-	, rbInteger(nullptr)
 {
-
-	setModal(true);
-
 	valAlpha = new QRegExpValidator(QRegExp(REGEX_ALPHA), this);
 	valDigit = new QRegExpValidator(QRegExp(REGEX_DIGIT), this);
 	valIban = new QRegExpValidator(QRegExp(REGEX_IBAN), this);
-
-	//QPushButton* 
-	btnOk = new QPushButton(this);
-	btnOk->setText(TXT_OK);
-	btnOk->setGeometry(QRect(0, 150, 80, 24));
-	//connect(ok, &QPushButton::clicked, this, &QDialog::accept);
-	connect(btnOk, &QPushButton::clicked, this, &NewAccountDialog::onOkButtonPressed);
-
-	QPushButton* cancel = new QPushButton(this);
-	cancel->setText(TXT_CANCEL);
-	cancel->setGeometry(QRect(80, 150, 80, 24));
-	connect(cancel, &QPushButton::clicked, this, &QDialog::reject);
-
-	lbltype = new QLabel(QString(TXT_ACCTYPE), this);
-
-	rbInteger = new QRadioButton(TXT_INTEGER, this);
-	rbInteger->setChecked(true);
-	connect(rbInteger, &QRadioButton::pressed, this, &NewCustomerAccountDialog::onRadioIntegerClicked);
-
-	rbIban = new QRadioButton(TXT_IBAN, this);
-	rbIban->setChecked(false);
-	connect(rbIban, &QRadioButton::pressed, this, &NewCustomerAccountDialog::onRadioIbanClicked);
-
-	userid = new QLineEdit("", this);
-	userid->setPlaceholderText("0123456789");
-	userid->setValidator(valDigit);
 }
 
 NewAccountDialog::~NewAccountDialog()
@@ -547,268 +443,158 @@ NewAccountDialog::~NewAccountDialog()
 	//
 }
 
-QString NewAccountDialog::getUserId()
+const char* NewAccountDialog::fieldToUiName(const char* n)
 {
-	return userid->text();
+	if (strcmp(n, FIELD_LASTNAME) == 0)
+		return TXT_LASTNAME;
+	else if (strcmp(n, FIELD_FIRSTNAME) == 0)
+		return TXT_FIRSTNAME;
+	else if (strcmp(n, FIELD_COMPANYNAME) == 0)
+		return TXT_COMPANYNAME;
+	else if (strcmp(n, FIELD_BUSINESSID) == 0)
+		return TXT_BUSINESSID;
+	else if (strcmp(n, FIELD_CREATED) == 0)
+		return TXT_CREATED;
+	else if (strcmp(n, FIELD_TYPE) == 0)
+		return TXT_ACCTYPE;
+
+	return nullptr;
 }
 
-bool NewAccountDialog::isIbanChecked()
+void NewAccountDialog::setSpecs(const AccountSpecs& specs)
 {
-	return rbIban->isChecked();
-}
+	m_Specs = specs;
 
-bool NewAccountDialog::isIntegerChecked()
-{
-	return rbInteger->isChecked();
+	AccountType type = m_Specs.getAccountType();
+
+	// TODO: exception ?
+	if (type == AccountType::None)
+		return;
+
+	float y = 0.0f;
+	const float x = 5.0f;
+	const float width = 150.0f;
+	const float height = 20.0f;
+
+	const std::vector<AccountField>& fields = m_Specs.getFields();
+
+	for (const AccountField& f : fields)
+	{
+		const char* locName = fieldToUiName(f.name.c_str());
+
+		if (!locName)
+			locName = f.name.c_str();
+
+		QLabel* label = new QLabel(QString(locName), this);
+		label->setGeometry(QRect(x, y, width, height));
+
+		y += height;
+
+		QLineEdit* edit = new QLineEdit(this);
+		edit->setGeometry(QRect(x, y, width, height));
+
+		y += height;
+
+		if (f.type == AccountField::FieldType::String)
+		{
+			edit->setPlaceholderText("Aa-Zz");
+			edit->setValidator(valAlpha);
+		}
+		else if (f.type == AccountField::FieldType::Integer)
+		{
+			edit->setPlaceholderText("01234567890");
+			edit->setValidator(valDigit);
+		}
+		else if (f.type == AccountField::FieldType::Iban)
+		{
+			edit->setPlaceholderText("FI1234567890");
+			edit->setValidator(valIban);
+		}
+
+		m_Fields.push_back(edit);
+	}
+
+	y += 5;
+
+	QPushButton* ok = new QPushButton(this);
+	ok->setText(TXT_OK);
+	ok->setGeometry(QRect(0, y, 80, 24));
+	//connect(ok, &QPushButton::clicked, this, &QDialog::accept);
+	connect(ok, &QPushButton::clicked, this, &NewAccountDialog::onOkButtonPressed);
+
+	QPushButton* no = new QPushButton(this);
+	no->setText(TXT_CANCEL);
+	no->setGeometry(QRect(80, y, 80, 24));
+	connect(no, &QPushButton::clicked, this, &QDialog::reject);
 }
 
 void NewAccountDialog::onOkButtonPressed()
 {
-	//
-}
+	std::vector<AccountField>& fields = m_Specs.getFields();
 
-void NewAccountDialog::onRadioIbanClicked()
-{
-	if (rbIban->isChecked())
-		return;
-
-	userid->setText("");
-	userid->setPlaceholderText("FI01234567890");
-	userid->setValidator(valIban);
-
-	rbIban->setChecked(true);
-	rbInteger->setChecked(false);
-}
-
-void NewAccountDialog::onRadioIntegerClicked()
-{
-	if (rbInteger->isChecked())
-		return;
-
-	userid->setText("");
-	userid->setPlaceholderText("0123456789");
-	userid->setValidator(valDigit);
-
-	rbIban->setChecked(false);
-	rbInteger->setChecked(true);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-NewCustomerAccountDialog::NewCustomerAccountDialog(QWidget* parent)
-	: NewAccountDialog(parent)
-	, lastName(nullptr)
-	, firstName(nullptr)
-{
-	// first name
-	QLabel* lblFirstName = new QLabel(QString(TXT_FIRSTNAME), this);
-	lblFirstName->setGeometry(QRect(5, 0, 150, 20));
-
-	firstName = new QLineEdit(this);
-	firstName->setGeometry(QRect(5, 20, 150, 20));
-	firstName->setClearButtonEnabled(true);
-	firstName->setPlaceholderText(TXT_FIRSTNAME);
-	firstName->setValidator(valAlpha);
-
-	// last name
-	QLabel* lblLastName = new QLabel(QString(TXT_LASTNAME), this);
-	lblLastName->setGeometry(QRect(5, 40, 150, 20));
-
-	lastName = new QLineEdit("", this);
-	lastName->setGeometry(QRect(5, 60, 150, 20));
-	lastName->setClearButtonEnabled(true);
-	lastName->setPlaceholderText(TXT_LASTNAME);
-	lastName->setValidator(valAlpha);
-
-	// account type
-	lbltype->setGeometry(QRect(5, 80, 150, 20));
-	rbInteger->setGeometry(QRect(10, 100, 82, 17));
-	rbIban->setGeometry(QRect(85, 100, 82, 17));
-	userid->setGeometry(QRect(5, 120, 150, 20));
-}
-
-NewCustomerAccountDialog::~NewCustomerAccountDialog()
-{
-	//
-}
-
-QString NewCustomerAccountDialog::getFirstName()
-{
-	return firstName->text();
-}
-
-QString NewCustomerAccountDialog::getLastName()
-{
-	return lastName->text();
-}
-
-void NewCustomerAccountDialog::onOkButtonPressed()
-{
-	//std::cout << "NewCustomerAccountDialog::onOkButtonPressed()" << std::endl;
-
-	int pos = 0;
-
-	QString fName = getFirstName();
-	int length = fName.length();
-
-	if (length < 1 || valAlpha->validate(fName, pos) != QValidator::Acceptable)
+	int i = 0;
+	for (QLineEdit* edit : m_Fields)
 	{
-		std::cout << "ERROR: invalid first name length=" << length << std::endl; // DEBUG
+		QString str = edit->text();
+		int length = str.length();
+		QByteArray ba = str.toLatin1();
+		const char* value = ba.data();
 
-		return;
-	}
+		// validate input
+		const AccountField& f = fields[i];
 
-	QString lName = getLastName();
-	length = lName.length();
-
-	if (length < 1 || valAlpha->validate(getLastName(), pos) != QValidator::Acceptable)
-	{
-		std::cout << "ERROR: invalid last name length=" << length << std::endl; // DEBUG
-
-		return;
-	}
-
-	QString uid = getUserId();
-	length = uid.length();
-
-	if (isIntegerChecked())
-	{
-		QByteArray bauid = uid.toLatin1();
-		char* d0 = (char*)bauid.data();
-
-		if (!isValidInteger(d0))
+		if (f.required && length < 1)
 		{
-			std::cout << "ERROR: invalid userid INT " << d0 << std::endl; // DEBUG
+			std::cout << "ERROR! required value is missing name=" << f.name.c_str() << std::endl; // DEBUG
 
 			return;
 		}
 
-		if (length < 1 || valDigit->validate(getUserId(), pos) != QValidator::Acceptable)
+		if (AccountField::FieldType::String == f.type)
 		{
-			std::cout << "ERROR: invalid userid INT " << d0 << std::endl; // DEBUG
+			int pos = 0;
+			if (valAlpha->validate(str, pos) != QValidator::Acceptable)
+			{
+				std::cout << "ERROR! invalid input " << f.name.c_str() << "=" << value << std::endl; // DEBUG
 
-			return;
+				return;
+			}
 		}
-	}
-	else
-	{
-		if (length < 4 || valIban->validate(getUserId(), pos) != QValidator::Acceptable)
+		else if (AccountField::FieldType::Iban == f.type)
 		{
-			std::cout << "ERROR: invalid userid IBAN length=" << length << std::endl; // DEBUG
+			int pos = 0;
+			if (valIban->validate(str, pos) != QValidator::Acceptable)
+			{
+				std::cout << "ERROR! invalid input " << f.name.c_str() << "=" << value << std::endl; // DEBUG
 
-			return;
+				return;
+			}
 		}
+		else if (AccountField::FieldType::Integer == f.type)
+		{
+			int pos = 0;
+			if (valDigit->validate(str, pos) != QValidator::Acceptable)
+			{
+				std::cout << "ERROR! invalid input " << f.name.c_str() << "=" << value << std::endl; // DEBUG
+
+				return;
+			}
+
+			if (!isValidInteger(value))
+			{
+				std::cout << "ERROR! invalid input " << f.name.c_str() << "=" << value << std::endl; // DEBUG
+
+				return;
+			}
+		}
+
+		// don't copy empty string
+		if (length > 0)
+			fields[i].value = std::string(value);
+
+		++i; // next
 	}
 
 	// input is valid
-	accept();
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-NewEnterpriseAccountDialog::NewEnterpriseAccountDialog(QWidget* parent)
-	: NewAccountDialog(parent)
-	, companyName(nullptr)
-	, businessId(nullptr)
-{
-	// company name
-	QLabel* lblCompanyName = new QLabel(QString(TXT_COMPANYNAME), this);
-	lblCompanyName->setGeometry(QRect(5, 0, 150, 20));
-
-	companyName = new QLineEdit(this);
-	companyName->setGeometry(QRect(5, 20, 150, 20));
-	companyName->setClearButtonEnabled(true);
-	companyName->setPlaceholderText(TXT_COMPANYNAME);
-	companyName->setValidator(valAlpha);
-
-	// last name
-	QLabel* lblBusinessId = new QLabel(QString(TXT_BUSINESSID), this);
-	lblBusinessId->setGeometry(QRect(5, 40, 150, 20));
-
-	businessId = new QLineEdit("", this);
-	businessId->setGeometry(QRect(5, 60, 150, 20));
-	businessId->setClearButtonEnabled(true);
-	businessId->setPlaceholderText(TXT_BUSINESSID);
-	businessId->setValidator(valDigit);
-
-	lbltype->setGeometry(QRect(5, 80, 150, 20));
-	rbInteger->setGeometry(QRect(10, 100, 82, 17));
-	rbIban->setGeometry(QRect(85, 100, 82, 17));
-	userid->setGeometry(QRect(5, 120, 150, 20));
-}
-
-NewEnterpriseAccountDialog::~NewEnterpriseAccountDialog()
-{
-	//
-}
-
-QString NewEnterpriseAccountDialog::getCompanyName()
-{
-	return companyName->text();
-}
-
-QString NewEnterpriseAccountDialog::getBusinessId()
-{
-	return businessId->text();
-}
-
-void NewEnterpriseAccountDialog::onOkButtonPressed()
-{
-	//std::cout << "NewEnterpriseAccountDialog::onOkButtonPressed()" << std::endl; // DEBUG
-
-	int pos = 0;
-
-	QString cname = getCompanyName();
-	int length = cname.length();
-
-	if (length < 1 || valAlpha->validate(cname, pos) != QValidator::Acceptable)
-	{
-		std::cout << "ERROR: invalid company name length=" << length << std::endl; // DEBUG
-
-		return;
-	}
-
-	QString buid = getBusinessId();
-	length = buid.length();
-
-	if (length < 1 || valDigit->validate(buid, pos) != QValidator::Acceptable)
-	{
-		std::cout << "ERROR: invalid business id length=" << length << std::endl; // DEBUG
-
-		return;
-	}
-
-	QString uid = getUserId();
-	length = uid.length();
-
-	if (isIntegerChecked())
-	{
-		QByteArray bauid = uid.toLatin1();
-		char* d0 = (char*)bauid.data();
-
-		if (!isValidInteger(d0))
-		{
-			std::cout << "ERROR: invalid userid INT " << d0 << std::endl; // DEBUG
-
-			return;
-		}
-
-		if (length < 1 || valDigit->validate(getUserId(), pos) != QValidator::Acceptable)
-		{
-			std::cout << "ERROR: invalid userid INT " << d0 << std::endl; // DEBUG
-
-			return;
-		}
-	}
-	else
-	{
-		if (length < 4 || valIban->validate(getUserId(), pos) != QValidator::Acceptable)
-		{
-			std::cout << "ERROR: invalid userid IBAN length=" << length << std::endl; // DEBUG
-
-			return;
-		}
-	}
-
 	accept();
 }

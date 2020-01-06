@@ -7,12 +7,11 @@
 struct sqlite3;
 
 class Account;
-class AccountDetails;
 class AccountCustomer;
 class AccountEnterprise;
 
-// LoadAccountsObserver
-class LoadAccountsObserver
+// DatabaseObserver
+class DatabaseObserver
 {
 public:
 	virtual void onAccountLoaded(const Account& a) = 0;
@@ -26,11 +25,9 @@ public:
 	SymbioDb();
 	virtual ~SymbioDb();
 	bool createAccount(const Account& a);
-	bool deleteAccount(const Account& a);
-	bool deleteAccounts(const std::vector<Account>& vec);
 	bool deleteAccounts(const std::vector<std::string>& vec);
-	void loadAccounts(LoadAccountsObserver* obs);
-	bool getAccountDetails(const Account& a, AccountDetails& dt);
+	void loadAccounts(DatabaseObserver* obs);
+	bool getAccountDetails(const Account& a, Account& dt);
 private:
 	void dropTables();
 	void createTables();

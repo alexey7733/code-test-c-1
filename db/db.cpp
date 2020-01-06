@@ -68,71 +68,14 @@ void SymbioDb::createTables()
 
 bool SymbioDb::createAccount(const Account& a)
 {
-	Account::AccountType t = a.getAccountType();
+	AccountType t = a.getAccountType();
 
-	if (t == Account::AccountType::Customer)
+	if (t == AccountType::Customer)
 		return createCustomerAccount(a);
-	else if (t == Account::AccountType::Enterprise)
+	else if (t == AccountType::Enterprise)
 		return createEnterpriseAccount(a);
 
 	return false;
-}
-
-bool SymbioDb::deleteAccount(const Account& a)
-{
-	std::string userid = a.getUserId()->toString();
-
-	std::string SQL = "DELETE FROM account WHERE userid=";
-	SQL += userid;
-
-	char* errMsg = 0;
-
-	int res = sqlite3_exec(db, SQL.c_str(), NULL, NULL, &errMsg);
-
-	if (errMsg)
-	{
-		std::cout << "ERROR: " << errMsg << std::endl;
-		sqlite3_free(errMsg);
-
-		return false;
-	}
-
-	return true;
-}
-
-bool SymbioDb::deleteAccounts(const std::vector<Account>& vec)
-{
-	std::string SQL = "DELETE FROM account WHERE userid IN (";
-	
-	int size = (int)vec.size();
-
-	for (int i = 0; i < size; ++i)
-	{
-		const Account& acc = vec[i];
-		std::string userid = acc.getUserId()->toString();
-		SQL += userid;
-
-		if (i < size - 1)
-			SQL += ",";
-	}
-
-	SQL += ")";
-
-	std::cout << " SQL=" << SQL << std::endl; // DEBUG
-
-	char* errMsg = 0;
-
-	int res = sqlite3_exec(db, SQL.c_str(), NULL, NULL, &errMsg);
-
-	if (errMsg)
-	{
-		std::cout << "ERROR " << errMsg << std::endl;
-		sqlite3_free(errMsg);
-
-		return false;
-	}
-
-	return true;
 }
 
 bool SymbioDb::deleteAccounts(const std::vector<std::string>& vec)
@@ -143,7 +86,9 @@ bool SymbioDb::deleteAccounts(const std::vector<std::string>& vec)
 
 	for (int i = 0; i < size; ++i)
 	{
+		SQL += "\"";
 		SQL += vec[i];
+		SQL += "\"";
 
 		if (i < size - 1)
 			SQL += ",";
@@ -168,7 +113,7 @@ bool SymbioDb::deleteAccounts(const std::vector<std::string>& vec)
 	return true;
 }
 
-void SymbioDb::loadAccounts(LoadAccountsObserver* obs)
+void SymbioDb::loadAccounts(DatabaseObserver* obs)
 {
 	std::string SQL = "SELECT userid, type, created FROM account";
 
@@ -176,40 +121,24 @@ void SymbioDb::loadAccounts(LoadAccountsObserver* obs)
 
 	int rc = sqlite3_exec(db, SQL.c_str(), [](void *param, int argc, char **argv, char **colname)->int
 	{
-		LoadAccountsObserver* observer = static_cast<LoadAccountsObserver*>(param);
+		DatabaseObserver* observer = static_cast<DatabaseObserver*>(param);
 
-		std::string userid;
-		time_t created = 0;
-		Account::AccountType type = Account::AccountType::None;
+		Account acc;
 
 		for (int i = 0; i < argc; i++)
 		{
 			//std::cout << colname[i] << " = " << (argv[i] ? argv[i] : "NULL") << std::endl; // DEBUG
 
 			if (strcmp(colname[i], "userid") == 0)
-				userid = argv[i] ? argv[i] : "";
+				acc.setUserId(argv[i] ? argv[i] : "");
 			if (strcmp(colname[i], "type") == 0)
-				type = argv[i] ? (Account::AccountType)std::atoi(argv[i]) : Account::AccountType::None;
+				acc.setAccountType(argv[i] ? (AccountType)std::atoi(argv[i]) : AccountType::None);
 			else if (strcmp(colname[i], "created") == 0)
-				created = argv[i] ? std::atol(argv[i]) : 0;
+				acc.setCreated(argv[i] ? std::atol(argv[i]) : 0);
 		}
 
-		if (type == Account::AccountType::Customer)
-		{
-			AccountCustomer acc(userid);
-			acc.setCreated(created);
-
-			if (observer)
-				observer->onAccountLoaded(acc);
-		}
-		else if (type == Account::AccountType::Enterprise)
-		{
-			AccountEnterprise acc(userid);
-			acc.setCreated(created);
-
-			if (observer)
-				observer->onAccountLoaded(acc);
-		}
+		if (observer)
+			observer->onAccountLoaded(acc);
 
 		return 0;
 	}
@@ -225,9 +154,9 @@ void SymbioDb::loadAccounts(LoadAccountsObserver* obs)
 		obs->onAccountsLoadCompleted();
 }
 
-bool SymbioDb::getAccountDetails(const Account& a, AccountDetails& dt)
+bool SymbioDb::getAccountDetails(const Account& acc, Account& dt)
 {
-	std::string uid = a.getUserId()->toString();
+	const std::string& uid = acc.getUserId();
 
 	std::string SQL = "SELECT type, created, firstname, lastname, companyname, businessid FROM account WHERE userid=\"";
 	SQL += uid;
@@ -237,24 +166,24 @@ bool SymbioDb::getAccountDetails(const Account& a, AccountDetails& dt)
 
 	int rc = sqlite3_exec(db, SQL.c_str(), [](void *param, int argc, char **argv, char **colname)->int
 	{
-		AccountDetails* data = static_cast<AccountDetails*>(param);
+		Account* data = static_cast<Account*>(param);
 
 		for (int i = 0; i < argc; i++)
 		{
 			//std::cout << colname[i] << " = " << (argv[i] ? argv[i] : "NULL") << std::endl; // DEBUG
 
 			if (strcmp(colname[i], "type") == 0)
-				data->type = argv[i] ? (Account::AccountType)std::atoi(argv[i]) : Account::AccountType::None;
+				data->setAccountType(argv[i] ? (AccountType)std::atoi(argv[i]) : AccountType::None);
 			else if (strcmp(colname[i], "created") == 0)
-				data->created = argv[i] ? std::atol(argv[i]) : 0;
+				data->setCreated(argv[i] ? std::atol(argv[i]) : 0);
 			else if (strcmp(colname[i], "firstname") == 0)
-				data->firstName = argv[i] ? argv[i] : "";
+				data->setFirstName(argv[i] ? argv[i] : "");
 			else if (strcmp(colname[i], "lastname") == 0)
-				data->lastName = argv[i] ? argv[i] : "";
+				data->setLastName(argv[i] ? argv[i] : "");
 			else if (strcmp(colname[i], "companyname") == 0)
-				data->companyName = argv[i] ? argv[i] : "";
+				data->setCompanyName(argv[i] ? argv[i] : "");
 			else if (strcmp(colname[i], "businessid") == 0)
-				data->businessId = argv[i] ? argv[i] : "";
+				data->setBusinessId(argv[i] ? argv[i] : "");
 		}
 
 		return 0;
@@ -272,15 +201,15 @@ bool SymbioDb::getAccountDetails(const Account& a, AccountDetails& dt)
 	return true;
 }
 
-bool SymbioDb::createCustomerAccount(const Account& a)
+bool SymbioDb::createCustomerAccount(const Account& acc)
 {
-	const AccountCustomer& acc = static_cast<const AccountCustomer&>(a);
+	//const AccountCustomer& acc = static_cast<const AccountCustomer&>(a);
 
 	time_t now;
 	time(&now);
 
-	std::string uid = acc.getUserId()->toString();
-	Account::AccountType type = acc.getAccountType();
+	const std::string& uid = acc.getUserId();
+	AccountType type = acc.getAccountType();
 	const std::string& lastName = acc.getLastName();
 	const std::string& firstName = acc.getFirstName();
 
@@ -312,17 +241,17 @@ bool SymbioDb::createCustomerAccount(const Account& a)
 	return true;
 }
 
-bool SymbioDb::createEnterpriseAccount(const Account& a)
+bool SymbioDb::createEnterpriseAccount(const Account& acc)
 {
-	const AccountEnterprise& acc = static_cast<const AccountEnterprise&>(a);
+	//const AccountEnterprise& acc = static_cast<const AccountEnterprise&>(a);
 
 	time_t now;
 	time(&now);
 
-	std::string uid = acc.getUserId()->toString();
-	Account::AccountType type = acc.getAccountType();
-	const std::string& name = acc.getName();
-	const std::string& businessid = acc.getBusinessid();
+	std::string uid = acc.getUserId();
+	AccountType type = acc.getAccountType();
+	const std::string& name = acc.getCompanyName();
+	const std::string& businessid = acc.getBusinessId();
 
 	char *errMsg = 0;
 

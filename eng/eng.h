@@ -1,11 +1,11 @@
 #ifndef __ENGH__
 #define __ENGH__
 
+#include <map>
 #include <vector>
+#include <string>
 #include "db.h"
-
-class Account;
-class AccountDetails;
+#include "account.h"
 
 // EngineObserver
 class EngineObserver
@@ -15,27 +15,36 @@ public:
 };
 
 // SymbioEng
-class SymbioEng : public LoadAccountsObserver
+class SymbioEng : public DatabaseObserver
 {
 public:
-	SymbioEng();
+	static SymbioEng* instance();
+	void release();
+
 	virtual ~SymbioEng();
 	void setObserver(EngineObserver* obs) { observer = obs; }
+	const std::map<AccountType, AccountSpecs>& getAccountSpecs() const { return specs; }
 
-	bool deleteAccount(const Account& acc);
 	bool deleteAccounts(const std::vector<std::string>& userids);
-	bool createAccount(const Account& acc);
+	bool createAccount(const AccountSpecs& spec);
 	void loadAccounts();
-	bool getAccountDetails(const std::string& uid, AccountDetails& det);
+	bool getAccountDetails(const std::string& uid, Account& det);
 
 	// From LoadAccountsObserver
 	virtual void onAccountLoaded(const Account& a);
 	virtual void onAccountsLoadCompleted();
 
 private:
+	SymbioEng();
+	void generateAccountSpecs();
+
+private:
+	static SymbioEng* singleton;
+
 	SymbioDb* driver;
 	EngineObserver* observer;
 	std::vector<Account> accArray;
+	std::map<AccountType, AccountSpecs> specs;
 };
 
 #endif // __ENGH__

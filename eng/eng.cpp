@@ -3,11 +3,35 @@
 #include "userid.h"
 //#include <iostream>
 
+////////////////////////////////////////////////////////////////////////////////
+
+SymbioEng* SymbioEng::singleton = nullptr;
+
+////////////////////////////////////////////////////////////////////////////////
+
+SymbioEng* SymbioEng::instance()
+{
+	if (!singleton)
+	{
+		singleton = new SymbioEng();
+	}
+	return singleton;
+}
+
+void SymbioEng::release()
+{
+	if (singleton)
+		delete singleton;
+	singleton = nullptr;
+}
+
 SymbioEng::SymbioEng()
 	: driver(nullptr)
 	, observer(nullptr)
 {
 	driver = new SymbioDb();
+
+	generateAccountSpecs();
 }
 
 SymbioEng::~SymbioEng()
@@ -15,70 +39,79 @@ SymbioEng::~SymbioEng()
 	delete driver;
 }
 
-bool SymbioEng::deleteAccount(const Account& acc)
-{
-	bool res = false;
-
-	if (driver)
-		res = driver->deleteAccount(acc);
-
-	return res;
-}
-
 bool SymbioEng::deleteAccounts(const std::vector<std::string>& userids)
 {
 	bool res = false;
 
-	if (driver)
+	if (userids.size() > 0)
+		res = driver->deleteAccounts(userids);
+
+	return res;
+}
+
+bool SymbioEng::createAccount(const AccountSpecs& spec)
+{
+	AccountType type = spec.getAccountType();
+
+	if (type == AccountType::None)
+		return false;
+
+	const std::vector<AccountField>& fields = spec.getFields();
+
+	std::string userid;
+	std::string firstname;
+	std::string lastname;
+	std::string companyname;
+	std::string businessid;
+
+	for (const AccountField& f : fields)
 	{
-		/*std::vector<Account> vec;
-
-		for (const std::string& uid : userids)
-		{
-			for (const Account& acc : accArray)
-			{
-				const std::string uid2 = acc.getUserId()->toString();
-
-				if (uid2.compare(uid) == 0)
-				{
-					vec.push_back(acc);
-					break;
-				}
-			}
-		}
-
-		if (vec.size() > 0)
-			res = driver->deleteAccounts(vec);*/
-
-		if (userids.size() > 0)
-			res = driver->deleteAccounts(userids);
+		if (f.name.compare(FIELD_USERID) == 0)
+			userid = f.value;
+		if (f.name.compare(FIELD_FIRSTNAME) == 0)
+			firstname = f.value;
+		else if (f.name.compare(FIELD_LASTNAME) == 0)
+			lastname = f.value;
+		else if (f.name.compare(FIELD_COMPANYNAME) == 0)
+			companyname = f.value;
+		else if (f.name.compare(FIELD_BUSINESSID) == 0)
+			businessid = f.value;
 	}
 
-	return res;
-}
-
-bool SymbioEng::createAccount(const Account& acc)
-{
 	bool res = false;
 
-	if (driver)
-		res = driver->createAccount(acc);
+	Account acc;
+	acc.setUserId(userid);
+	acc.setAccountType(type);
+
+	if (AccountType::Customer == type)
+	{
+		acc.setFirstName(firstname);
+		acc.setLastName(lastname);
+	}
+	else if (AccountType::Enterprise == type)
+	{
+		acc.setCompanyName(companyname);
+		acc.setBusinessId(businessid);
+	}
+
+	res = driver->createAccount(acc);
 
 	return res;
 }
 
-bool SymbioEng::getAccountDetails(const std::string& uid, AccountDetails& det)
+bool SymbioEng::getAccountDetails(const std::string& uid, Account& det)
 {
 	bool res = false;
 
 	for (const Account& acc : accArray)
 	{
-		const std::string uid2 = acc.getUserId()->toString();
+		const std::string& uid2 = acc.getUserId();
 
 		if (uid2.compare(uid) == 0)
 		{
-			if (driver)
-				res = driver->getAccountDetails(acc, det);
+			res = driver->getAccountDetails(acc, det);
+
 			return res;
 		}
 	}
@@ -90,8 +123,7 @@ void SymbioEng::loadAccounts()
 {
 	accArray.clear(); // empty old stuff
 
-	if (driver)
-		driver->loadAccounts(this);
+	driver->loadAccounts(this);
 }
 
 void SymbioEng::onAccountLoaded(const Account& a)
@@ -107,4 +139,10 @@ void SymbioEng::onAccountsLoadCompleted()
 
 	if (observer)
 		observer->onAccountsLoadCompleted(accArray);
+}
+
+void SymbioEng::generateAccountSpecs()
+{
+	specs[AccountType::Customer] = AccountSpecs(AccountType::Customer);
+	specs[AccountType::Enterprise] = AccountSpecs(AccountType::Enterprise);
 }
