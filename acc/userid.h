@@ -3,7 +3,10 @@
 
 #include <string>
 
-// UserId
+/*!
+*  \brief     Not in use
+*  \details   Has been part of the previous user id implementation
+*/
 class UserId
 {
 public:
@@ -17,7 +20,10 @@ public:
 	virtual std::string toString() const = 0;
 };
 
-// UserIdInt
+/*!
+*  \brief     Not in use
+*  \details   Has been part of the previous user id implementation
+*/
 class UserIdInt : public UserId
 {
 public:
@@ -33,7 +39,10 @@ private:
 	int uid;
 };
 
-// UserIdStr
+/*!
+*  \brief     Not in use
+*  \details   Has been part of the previous user id implementation
+*/
 class UserIdStr : public UserId
 {
 public:
