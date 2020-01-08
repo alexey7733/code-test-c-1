@@ -27,9 +27,13 @@ Using
 - To delete existing account click account id under the "User id" column and press "Delete"
 - To view account details click account id under the "User id" column and press "Details"
 
+Error handling
+- There is no visual feedback about the errors in the software
+- Instead, there is debug output in the console (visible behind the main ui program)
+
 Unit test for database module
 - There is a macro definition in db.h file
-- To activate unit test uncomment on line 8 in db.h file
+- To activate unit test uncomment line 8 in db.h file
 
 //#define UNIT_TEST_DB
 
