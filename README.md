@@ -35,3 +35,8 @@ Unit test for database module
 
 - After that build and run program normally
 - In the console you will see otput of the unit test
+
+Documentation
+- There is HTML documentation in the doc/doxygen/html folder ad the project root
+ - click index.html file to see documented classes and interfaces
+
