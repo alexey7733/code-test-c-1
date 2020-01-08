@@ -4,6 +4,10 @@
 #include <string>
 #include <vector>
 
+#ifndef UNIT_TEST_DB
+//#define UNIT_TEST_DB
+#endif
+
 struct sqlite3;
 
 class Account;
@@ -70,6 +74,11 @@ private:
 	void createTables();
 	bool createCustomerAccount(const Account& a);
 	bool createEnterpriseAccount(const Account& a);
+
+#ifdef	UNIT_TEST_DB
+	void test_add_accounts();
+#endif
+
 private:
 	sqlite3* db;
 };
