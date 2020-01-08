@@ -20,3 +20,12 @@ Using
 - There will be popup shown to input data for the new account
 - To delete existing account click account id under the "User id" column and press "Delete"
 - To view account details click account id under the "User id" column and press "Details"
+
+Unit test for database module
+- There is a macro definition in db.h file
+- To activate unit test uncomment on line 8 in db.h file
+
+//#define UNIT_TEST_DB
+
+- After that build and run program normally
+- In the console you will see otput of the unit test
