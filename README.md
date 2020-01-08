@@ -3,13 +3,19 @@ c++ code test assignment
 
 Configuring
 
-- Use CMake gui utility to configure the project
+- Clone project from git repository https://github.com/alexey7733/code-test-c-1.git
+
+- Launch CMamke gui and choose Visual Studio 2014 (has to be installed earlier) and native compiler settings
+
+- Use CMake gui utility to configure the project (tested on Windows 10)
+ - navigate to the source directory of the project in the CMake gui
+ - setup build directory in the CMake gui
  - for CMake to fin Qt binaries CMAKE_PREFIX_PATH entry need to be added
  example: "C:/Qt/Qt5.12.6/5.12.6/msvc2015_64/lib/cmake"
- - Press "Configure"
- - Pres "Generate"
+ - press "Configure"
+ - pres "Generate"
  
- Building
+ Build and run
 - There will be Visual Studio project solution generated in the "build" directory (defined earlier in CMake gui)
 - Open Symbio-CodeTest solution file
 - Select and right-click the "symbioDemo" module and select "Set as StartUp Project"
